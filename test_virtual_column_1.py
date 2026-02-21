@@ -50,11 +50,7 @@ if __name__ == "__main__":
     test_sum_of_two_columns()
     test_multiplication_of_two_columns()
     test_subtraction_of_two_columns()
+    test_empty_result_when_invalid_labels()
+    test_empty_result_when_invalid_rules()
+    test_when_extra_spaces_in_rules()
     print("All tests passed!")
-
-    # test_empty_result_when_invalid_labels()
-    # test_empty_result_when_invalid_rules()    
-
-    # test_empty_result_when_invalid_rules()
-    # test_when_extra_spaces_in_rules()
-    # print("All tests passed!")

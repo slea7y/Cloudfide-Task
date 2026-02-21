@@ -13,15 +13,19 @@ def valid_df(df: pd.DataFrame):
 
 
 def valid_eqt(df: pd.DataFrame,
-              eqt_col: str):
+              eqt_col: str,
+              sum_col: str
+              ):
     calc = eqt_col.count("+") + eqt_col.count("-") + eqt_col.count("*")
     if calc != 1:
-        print("0")
+        return False
+    if (sum_col != "label_three"):
+        return False
     if eqt_col.find("+") > 0:
         cols = eqt_col.split("+")
         str1 = cols[0].strip()
         str2 = cols[1].strip()
-        if df.columns[0] == str1:
+        if df.columns[0] == str1 and df.columns[1] == str2:
             return "+", str1, str2
     elif eqt_col.find("*") > 0:
         cols = eqt_col.split("*")
@@ -35,8 +39,7 @@ def valid_eqt(df: pd.DataFrame,
         str2 = cols[1].strip()
         if df.columns[0] == str1 and df.columns[1] == str2:
             return "-", str1, str2
-    else:
-            return False
+    return False
 
 
 def add_virtual_column(df: pd.DataFrame,
@@ -44,12 +47,14 @@ def add_virtual_column(df: pd.DataFrame,
                        sum_col: str
                        ) -> pd.DataFrame:
     valid_df(df)
-    if valid_eqt(df, eqt_col) == False:
+    result = valid_eqt(df, eqt_col, sum_col)
+    if result == False:
         return pd.DataFrame()
-    result = valid_eqt(df, eqt_col)
-    eqt = result[0]
-    col_1 = result[1]
-    col_2 = result[2]
+    else:
+        eqt = result[0]
+        col_1 = result[1]
+        col_2 = result[2]
+
     if eqt[0] == "+":
         df[sum_col] = df[col_1] + df[col_2]
     elif eqt[0] == "*":
