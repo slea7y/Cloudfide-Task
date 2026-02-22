@@ -1,6 +1,11 @@
+import operator
 import pandas as pd
-# import locale
 
+OPS = {
+    "+": operator.add,
+    "-": operator.sub,
+    "*": operator.mul,
+}
 
 def valid_df(df: pd.DataFrame):
     if df is None:
@@ -9,37 +14,33 @@ def valid_df(df: pd.DataFrame):
         raise ValueError("df is empty")
     non_numeric = df.select_dtypes(exclude="number").columns
     if len(non_numeric) > 0:
-        raise ValueError("")
+        raise ValueError(f"Non-numeric columns found: {list(non_numeric)}")
 
 
-def valid_eqt(df: pd.DataFrame,
-              eqt_col: str,
-              sum_col: str
-              ):
-    calc = eqt_col.count("+") + eqt_col.count("-") + eqt_col.count("*")
-    if calc != 1:
+def valid_label(lable: str) -> bool:
+    return lable.replace("_", "").isalpha()
+
+
+def valid_table(df: pd.DataFrame, eqt_col: str, sum_col: str):
+    operators = ["+", "-", "*"]
+    found_ops = [op for op in operators if op in eqt_col]
+
+    if len(found_ops) != 1:
         return False
-    if (sum_col != "label_three"):
+
+    if not valid_label(sum_col):
         return False
-    if eqt_col.find("+") > 0:
-        cols = eqt_col.split("+")
-        str1 = cols[0].strip()
-        str2 = cols[1].strip()
-        if df.columns[0] == str1 and df.columns[1] == str2:
-            return "+", str1, str2
-    elif eqt_col.find("*") > 0:
-        cols = eqt_col.split("*")
-        str1 = cols[0].strip()
-        str2 = cols[1].strip()
-        if df.columns[0] == str1 and df.columns[1] == str2:
-            return "*", str1, str2
-    elif eqt_col.find("-") > 0:
-        cols = eqt_col.split("-")
-        str1 = cols[0].strip()
-        str2 = cols[1].strip()
-        if df.columns[0] == str1 and df.columns[1] == str2:
-            return "-", str1, str2
-    return False
+
+    op = found_ops[0]
+    str1, str2 = map(str.strip, eqt_col.split(op))
+
+    if not (valid_label(str1) and valid_label(str2)):
+        return False
+
+    if list(df.columns[:2]) != [str1, str2]:
+        return False
+
+    return op, str1, str2
 
 
 def add_virtual_column(df: pd.DataFrame,
@@ -47,18 +48,12 @@ def add_virtual_column(df: pd.DataFrame,
                        sum_col: str
                        ) -> pd.DataFrame:
     valid_df(df)
-    result = valid_eqt(df, eqt_col, sum_col)
-    if result == False:
+    result = valid_table(df, eqt_col, sum_col)
+    if not result:
         return pd.DataFrame()
     else:
-        eqt = result[0]
-        col_1 = result[1]
-        col_2 = result[2]
+        op, col_1, col_2 = result
 
-    if eqt[0] == "+":
-        df[sum_col] = df[col_1] + df[col_2]
-    elif eqt[0] == "*":
-        df[sum_col] = df[col_1] * df[col_2]
-    elif eqt[0] == "-":
-        df[sum_col] = df[col_1] - df[col_2]
-    return (df)
+    df = df.copy()
+    df[sum_col] = OPS[op](df[col_1], df[col_2])
+    return df
